@@ -1416,3 +1416,15 @@ BOOL QCALLTYPE AssemblyNative::InternalTryGetRawMetadata(
 
     return metadata != nullptr;
 }
+
+// static
+void QCALLTYPE AssemblyNative::FireLoadFileContextCreated(int n)
+{
+    QCALL_CONTRACT;
+
+    BEGIN_QCALL;
+
+    FireEtwFallbackToDefaultALC(n);
+
+    END_QCALL;
+}
