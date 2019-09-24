@@ -30,6 +30,7 @@
 
 #include "appdomainnative.hpp"
 #include "../binder/inc/clrprivbindercoreclr.h"
+#include "../binder/inc/bindertracing.h"
 
 
 
@@ -1424,7 +1425,7 @@ void QCALLTYPE AssemblyNative::FireLoadFileContextCreated(int n)
 
     BEGIN_QCALL;
 
-    FireEtwFallbackToDefaultALC(n);
+    FireEtwFallbackToDefaultALC(&BinderTracing::GetCurrentRequestId(), n);
 
     END_QCALL;
 }

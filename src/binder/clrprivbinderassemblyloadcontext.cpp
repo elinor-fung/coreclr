@@ -4,6 +4,7 @@
 
 #include "common.h"
 #include "assemblybinder.hpp"
+#include "bindertracing.h"
 #include "clrprivbindercoreclr.h"
 #include "clrprivbinderassemblyloadcontext.h"
 
@@ -57,6 +58,8 @@ HRESULT CLRPrivBinderAssemblyLoadContext::BindAssemblyByName(IAssemblyName     *
     SAFE_NEW(pAssemblyName, AssemblyName);
     IF_FAIL_GO(pAssemblyName->Init(pIAssemblyName));
         
+    BinderTracing::AssemblyBindStart(pAssemblyName, 2);
+
     // When LoadContext needs to resolve an assembly reference, it will go through the following lookup order:
     //
     // 1) Lookup the assembly within the LoadContext itself. If assembly is found, use it.
@@ -108,6 +111,7 @@ HRESULT CLRPrivBinderAssemblyLoadContext::BindAssemblyByName(IAssemblyName     *
     // extract the reference now.
     *ppAssembly = pCoreCLRFoundAssembly.Extract();
 Exit:;        
+    BinderTracing::AssemblyBindEnd(pAssemblyName, 2);
 
     return hr;
 }
@@ -137,6 +141,8 @@ HRESULT CLRPrivBinderAssemblyLoadContext::BindUsingPEImage( /* in */ PEImage *pP
         SAFE_NEW(pAssemblyName, AssemblyName);
         IF_FAIL_GO(pAssemblyName->Init(pIMetaDataAssemblyImport, PeKind));
         
+        BinderTracing::AssemblyBindStart(pAssemblyName, 3);
+
         // Validate architecture
         if (!BINDER_SPACE::Assembly::IsValidArchitecture(pAssemblyName->GetArchitecture()))
         {
@@ -156,10 +162,14 @@ HRESULT CLRPrivBinderAssemblyLoadContext::BindUsingPEImage( /* in */ PEImage *pP
             _ASSERTE(pCoreCLRFoundAssembly != NULL);
             pCoreCLRFoundAssembly->SetBinder(this);
             *ppAssembly = pCoreCLRFoundAssembly.Extract();
+
+            BinderTracing::AssemblyBindEnd(pAssemblyName, 3);
         }
 Exit:;        
     }
     EX_CATCH_HRESULT(hr);
+    if (FAILED(hr))
+        BinderTracing::AssemblyBindEnd(nullptr, 3);
 
     return hr;
 }

@@ -17,8 +17,8 @@
                              message="$(string.RuntimePublisher.GCKeywordMessage)" symbol="CLR_GC_KEYWORD"/>
                     <keyword name="GCHandleKeyword" mask="0x2"
                              message="$(string.RuntimePublisher.GCHandleKeywordMessage)" symbol="CLR_GCHANDLE_KEYWORD"/>
-                    <keyword name="FusionKeyword" mask="0x4"
-                             message="$(string.RuntimePublisher.FusionKeywordMessage)" symbol="CLR_FUSION_KEYWORD"/>
+                    <keyword name="BinderKeyword" mask="0x4"
+                             message="$(string.RuntimePublisher.BinderKeywordMessage)" symbol="CLR_BINDER_KEYWORD"/>
                     <keyword name="LoaderKeyword" mask="0x8"
                              message="$(string.RuntimePublisher.LoaderKeywordMessage)" symbol="CLR_LOADER_KEYWORD"/>
                     <keyword name="JitKeyword" mask="0x10"
@@ -242,7 +242,6 @@
                             <opcode name="AssemblyUnload" message="$(string.RuntimePublisher.AssemblyUnloadOpcodeMessage)" symbol="CLR_ASSEMBLYUNLOAD_OPCODE" value="38"> </opcode>
                             <opcode name="AppDomainLoad" message="$(string.RuntimePublisher.AppDomainLoadOpcodeMessage)" symbol="CLR_APPDOMAINLOAD_OPCODE" value="41"> </opcode>
                             <opcode name="AppDomainUnload" message="$(string.RuntimePublisher.AppDomainUnloadOpcodeMessage)" symbol="CLR_APPDOMAINUNLOAD_OPCODE" value="42"> </opcode>
-                            <opcode name="FallbackToDefaultALC" message="$(string.RuntimePublisher.FallbackToDefaultALCOpcodeMessage)" symbol="CLR_FALLBACKTODEFAULTALC_OPCODE" value="43"> </opcode>
                         </opcodes>
                     </task>
 
@@ -387,7 +386,17 @@
                             <opcode name="Resume" message="$(string.RuntimePublisher.TieredCompilationResumeOpcodeMessage)" symbol="CLR_TIERED_COMPILATION_RESUME_OPCODE" value="13"/>
                         </opcodes>
                     </task>
-                <!--Next available ID is 32-->
+
+                    <task name="CLRBinder" symbol="CLR_BINDER_TASK"
+                          value="32" eventGUID="{B9E3C533-53AB-4596-A5A8-8DEEA9222E4E}"
+                          message="$(string.RuntimePublisher.BinderTaskMessage)">
+                        <opcodes>
+                            <opcode name="AssemblyBindStart" message="$(string.RuntimePublisher.AssemblyBindStartOpcodeMessage)" symbol="CLR_ASSEMBLY_BIND_START_OPCODE" value="11" />
+                            <opcode name="AssemblyBindEnd" message="$(string.RuntimePublisher.AssemblyBindEndOpcodeMessage)" symbol="CLR_ASSEMBLY_BIND_END_OPCODE" value="12" />
+                            <opcode name="FallbackToDefaultALC" message="$(string.RuntimePublisher.FallbackToDefaultALCOpcodeMessage)" symbol="CLR_FALLBACKTODEFAULTALC_OPCODE" value="13" />
+                        </opcodes>
+                    </task>
+                <!--Next available ID is 33-->
                 </tasks>
                 <!--Maps-->
                 <maps>
@@ -465,6 +474,10 @@
                       <map value="0x6" message="$(string.RuntimePublisher.GCHandleKind.DependentMessage)"/>
                       <map value="0x7" message="$(string.RuntimePublisher.GCHandleKind.AsyncPinnedMessage)"/>
                       <map value="0x8" message="$(string.RuntimePublisher.GCHandleKind.SizedRefMessage)"/>
+                    </valueMap>
+
+                    <valueMap name="BindEntryPointMap">
+                      <map value="0x0" message="$(string.RuntimePublisher.BindEntryPoint.TestMessage)"/>
                     </valueMap>
 
                     <!-- BitMaps -->
@@ -1625,12 +1638,29 @@
                         </UserData>
                     </template>
 
+                    <template tid="AssemblyBind">
+                        <data name="BindRequestID" inType="win:GUID" />
+                        <data name="ClrInstanceID" inType="win:UInt16" />
+                        <data name="EntryPoint" inType="win:UInt16" map="BindEntryPointMap" />
+                        <data name="AssemblyName" inType="win:UnicodeString" />
+                        <UserData>
+                            <AssemblyBind xmlns="myNs">
+                                <BindRequestID> %1 </BindRequestID>
+                                <ClrInstanceID> %2 </ClrInstanceID>
+                                <EntryPoint> %3 </EntryPoint>
+                                <AssemblyName> %4 </AssemblyName>
+                            </AssemblyBind>
+                        </UserData>
+                    </template>
+
                     <template tid="FallbackToDefaultALC">
+                        <data name="BindRequestID" inType="win:GUID" />
                         <data name="ClrInstanceID" inType="win:UInt16" />
 
                         <UserData>
                             <FallbackToDefaultALC xmlns="myNs">
-                                <ClrInstanceID> %1 </ClrInstanceID>
+                                <BindRequestID> %1 </BindRequestID>
+                                <ClrInstanceID> %2 </ClrInstanceID>
                             </FallbackToDefaultALC>
                         </UserData>
                     </template>
@@ -3292,9 +3322,19 @@
                            task="CLRPerfTrack"
                            symbol="ModuleRangeLoad" message="$(string.RuntimePublisher.ModuleRangeLoadEventMessage)"/>
 
-                    <event value="300" version="0" level="win:Informational"  template="FallbackToDefaultALC"
-                           keywords ="LoaderKeyword" opcode="FallbackToDefaultALC"
-                           task="CLRLoader"
+                    <event value="300" version="0" level="win:Informational"  template="AssemblyBind"
+                           keywords ="BinderKeyword" opcode="AssemblyBindStart"
+                           task="CLRBinder"
+                           symbol="AssemblyBindStart" message="$(string.RuntimePublisher.AssemblyBindEventMessage)"/>
+
+                    <event value="301" version="0" level="win:Informational"  template="AssemblyBind"
+                           keywords ="BinderKeyword" opcode="AssemblyBindEnd"
+                           task="CLRBinder"
+                           symbol="AssemblyBindEnd" message="$(string.RuntimePublisher.AssemblyBindEventMessage)"/>
+
+                    <event value="302" version="0" level="win:Informational"  template="FallbackToDefaultALC"
+                           keywords ="BinderKeyword" opcode="FallbackToDefaultALC"
+                           task="CLRBinder"
                            symbol="FallbackToDefaultALC" message="$(string.RuntimePublisher.FallbackToDefaultALCEventMessage)"/>
 
                     <!-- CLR Security events -->
@@ -6613,7 +6653,8 @@
                 <string id="RuntimePublisher.AppDomainLoad_V1EventMessage" value="AppDomainID=%1;%nAppDomainFlags=%2;%nAppDomainName=%3;%nAppDomainIndex=%4;%nClrInstanceID=%5" />
                 <string id="RuntimePublisher.AppDomainUnloadEventMessage" value="AppDomainID=%1;%nAppDomainFlags=%2;%nAppDomainName=%3" />
                 <string id="RuntimePublisher.AppDomainUnload_V1EventMessage" value="AppDomainID=%1;%nAppDomainFlags=%2;%nAppDomainName=%3;%nAppDomainIndex=%4;%nClrInstanceID=%5" />
-                <string id="RuntimePublisher.FallbackToDefaultALCEventMessage" value="nClrInstanceID=%1" />
+                <string id="RuntimePublisher.FallbackToDefaultALCEventMessage" value="BindRequestID=%1;%nClrInstanceID=%2" />
+                <string id="RuntimePublisher.AssemblyBindEventMessage" value="BindRequestID=%1;%nClrInstanceID=%2;%nEntryPoint=%3;%nAssemblyName=%4" />
                 <string id="RuntimePublisher.StackEventMessage" value="ClrInstanceID=%1;%nReserved1=%2;%nReserved2=%3;%nFrameCount=%4;%nStack=%5" />
                 <string id="RuntimePublisher.AppDomainMemAllocatedEventMessage" value="AppDomainID=%1;%nAllocated=%2;%nClrInstanceID=%3" />
                 <string id="RuntimePublisher.AppDomainMemSurvivedEventMessage" value="AppDomainID=%1;%nSurvived=%2;%nProcessSurvived=%3;%nClrInstanceID=%4" />
@@ -6789,6 +6830,7 @@
                 <string id="RuntimePublisher.ExceptionFilterTaskMessage" value="ExceptionFilter" />
                 <string id="RuntimePublisher.ContentionTaskMessage" value="Contention" />
                 <string id="RuntimePublisher.MethodTaskMessage" value="Method" />
+                <string id="RuntimePublisher.BinderTaskMessage" value="Binder" />
                 <string id="RuntimePublisher.LoaderTaskMessage" value="Loader" />
                 <string id="RuntimePublisher.StackTaskMessage" value="ClrStack" />
                 <string id="RuntimePublisher.StrongNameVerificationTaskMessage" value="StrongNameVerification" />
@@ -6838,6 +6880,7 @@
                 <string id="RuntimePublisher.Assembly.DynamicMapMessage" value="Dynamic" />
                 <string id="RuntimePublisher.Assembly.NativeMapMessage" value="Native" />
                 <string id="RuntimePublisher.Assembly.CollectibleMapMessage" value="Collectible" />
+                <string id="RuntimePublisher.BindEntryPoint.TestMessage" value="Test" />
                 <string id="RuntimePublisher.Module.DomainNeutralMapMessage" value="DomainNeutral" />
                 <string id="RuntimePublisher.Module.NativeMapMessage" value="Native" />
                 <string id="RuntimePublisher.Module.DynamicMapMessage" value="Dynamic" />
@@ -7074,7 +7117,7 @@
                 <!-- Keyword Messages -->
                 <string id="RuntimePublisher.GCKeywordMessage" value="GC" />
                 <string id="RuntimePublisher.ThreadingKeywordMessage" value="Threading" />
-                <string id="RuntimePublisher.FusionKeywordMessage" value="Binder" />
+                <string id="RuntimePublisher.BinderKeywordMessage" value="Binder" />
                 <string id="RuntimePublisher.LoaderKeywordMessage" value="Loader" />
                 <string id="RuntimePublisher.JitKeywordMessage" value="Jit" />
                 <string id="RuntimePublisher.JittedMethodILToNativeMapKeywordMessage" value="JittedMethodILToNativeMap" />
@@ -7195,6 +7238,8 @@
                 <string id="RuntimePublisher.AssemblyUnloadOpcodeMessage" value="AssemblyUnload" />
                 <string id="RuntimePublisher.AppDomainLoadOpcodeMessage" value="AppDomainLoad" />
                 <string id="RuntimePublisher.AppDomainUnloadOpcodeMessage" value="AppDomainUnload" />
+                <string id="RuntimePublisher.AssemblyBindStartOpcodeMessage" value="AssemblyBindStart" />
+                <string id="RuntimePublisher.AssemblyBindEndOpcodeMessage" value="AssemblyBindEnd" />
                 <string id="RuntimePublisher.FallbackToDefaultALCOpcodeMessage" value="FallbackToDefaultALC" />
                 <string id="RuntimePublisher.CLRStackWalkOpcodeMessage" value="Walk" />
                 <string id="RuntimePublisher.AppDomainMemAllocatedOpcodeMessage" value="MemAllocated" />

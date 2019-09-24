@@ -4,6 +4,7 @@
 
 #include "common.h"
 #include "assemblybinder.hpp"
+#include "bindertracing.h"
 #include "clrprivbindercoreclr.h"
 
 using namespace BINDER_SPACE;
@@ -59,6 +60,8 @@ HRESULT CLRPrivBinderCoreCLR::BindAssemblyByName(IAssemblyName     *pIAssemblyNa
         SAFE_NEW(pAssemblyName, AssemblyName);
         IF_FAIL_GO(pAssemblyName->Init(pIAssemblyName));
         
+        BinderTracing::AssemblyBindStart(pAssemblyName, 0);
+
         hr = BindAssemblyByNameWorker(pAssemblyName, &pCoreCLRFoundAssembly, false /* excludeAppPaths */);
 
 #if !defined(DACCESS_COMPILE) && !defined(CROSSGEN_COMPILE)
@@ -98,10 +101,13 @@ HRESULT CLRPrivBinderCoreCLR::BindAssemblyByName(IAssemblyName     *pIAssemblyNa
         IF_FAIL_GO(hr);
 
         *ppAssembly = pCoreCLRFoundAssembly.Extract();
+        BinderTracing::AssemblyBindEnd(pAssemblyName, 0);
 
 Exit:;        
     }
     EX_CATCH_HRESULT(hr);
+    if (FAILED(hr))
+        BinderTracing::AssemblyBindEnd(nullptr, 0);
 
     return hr;
 }
@@ -132,6 +138,8 @@ HRESULT CLRPrivBinderCoreCLR::BindUsingPEImage( /* in */ PEImage *pPEImage,
         SAFE_NEW(pAssemblyName, AssemblyName);
         IF_FAIL_GO(pAssemblyName->Init(pIMetaDataAssemblyImport, PeKind));
         
+        BinderTracing::AssemblyBindStart(pAssemblyName, 1);
+
         // Validate architecture
         if (!BINDER_SPACE::Assembly::IsValidArchitecture(pAssemblyName->GetArchitecture()))
         {
@@ -170,11 +178,14 @@ HRESULT CLRPrivBinderCoreCLR::BindUsingPEImage( /* in */ PEImage *pPEImage,
                 _ASSERTE(pCoreCLRFoundAssembly != NULL);
                 pCoreCLRFoundAssembly->SetBinder(this);
                 *ppAssembly = pCoreCLRFoundAssembly.Extract();
+                BinderTracing::AssemblyBindEnd(pAssemblyName, 1);
             }
         }
 Exit:;        
     }
     EX_CATCH_HRESULT(hr);
+    if (FAILED(hr))
+        BinderTracing::AssemblyBindEnd(nullptr, 1);
 
     return hr;
 }

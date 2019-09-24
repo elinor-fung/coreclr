@@ -67,7 +67,7 @@
 #include "stringarraylist.h"
 
 #include "../binder/inc/clrprivbindercoreclr.h"
-
+#include "../binder/inc/bindertracing.h"
 
 #include "clrprivtypecachewinrt.h"
 
@@ -6533,7 +6533,7 @@ HRESULT RuntimeInvokeHostAssemblyResolver(INT_PTR pManagedAssemblyLoadContextToB
                 // Switch to pre-emp mode before calling into the binder
                 GCX_PREEMP();
 
-                FireEtwFallbackToDefaultALC(GetClrInstanceId());
+                FireEtwFallbackToDefaultALC(&BinderTracing::GetCurrentRequestId(), GetClrInstanceId());
 
                 ICLRPrivAssembly *pCoreCLRFoundAssembly = NULL;
                 hr = pTPABinder->BindAssemblyByName(pIAssemblyName, &pCoreCLRFoundAssembly);
