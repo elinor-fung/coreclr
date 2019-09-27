@@ -39,7 +39,9 @@ public:
                                                                 CLR_BOOL fThrowOnFileNotFound,
                                                                 AssemblyLoadContextBaseObject *assemblyLoadContextUNSAFE);
 
+    static FCDECL0(bool, IsBinderTracingEnabled);
     static void QCALLTYPE FireLoadFileContextCreated(int n);
+    static void QCALLTYPE FireResolvingHandlerInvoked(LPCWSTR assemblyName, LPCWSTR handlerName, LPCWSTR result);
 
     //
     // instance FCALLs

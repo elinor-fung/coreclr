@@ -193,5 +193,8 @@ namespace System.Runtime.Loader
                 asm is System.Reflection.Emit.AssemblyBuilder ab ? ab.InternalAssembly :
                 null;
         }
+
+        [DllImport(JitHelpers.QCall, CharSet = CharSet.Unicode)]
+        private static extern void FireResolvingHandlerInvoked(string assemblyName, string handlerName, string resolvedAssemblyLocation);
     }
 }

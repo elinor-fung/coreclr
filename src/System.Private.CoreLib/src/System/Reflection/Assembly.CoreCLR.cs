@@ -124,6 +124,9 @@ namespace System.Reflection
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern uint GetAssemblyCount();
 
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern bool IsBinderTracingEnabled();
+
         [DllImport(JitHelpers.QCall, CharSet = CharSet.Unicode)]
         private static extern void FireLoadFileContextCreated(int n);
     }

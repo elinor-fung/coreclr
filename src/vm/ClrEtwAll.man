@@ -394,6 +394,7 @@
                             <opcode name="AssemblyBindStart" message="$(string.RuntimePublisher.AssemblyBindStartOpcodeMessage)" symbol="CLR_ASSEMBLY_BIND_START_OPCODE" value="11" />
                             <opcode name="AssemblyBindEnd" message="$(string.RuntimePublisher.AssemblyBindEndOpcodeMessage)" symbol="CLR_ASSEMBLY_BIND_END_OPCODE" value="12" />
                             <opcode name="FallbackToDefaultALC" message="$(string.RuntimePublisher.FallbackToDefaultALCOpcodeMessage)" symbol="CLR_FALLBACKTODEFAULTALC_OPCODE" value="13" />
+                            <opcode name="ALCResolvingHandlerInvoked" message="$(string.RuntimePublisher.ALCResolvingHandlerInvokedOpcodeMessage)" symbol="CLR_ALC_RESOLVING_HANDLER_INVOKED_OPCODE" value="14" />
                         </opcodes>
                     </task>
                 <!--Next available ID is 33-->
@@ -1662,6 +1663,21 @@
                                 <BindRequestID> %1 </BindRequestID>
                                 <ClrInstanceID> %2 </ClrInstanceID>
                             </FallbackToDefaultALC>
+                        </UserData>
+                    </template>
+
+                    <template tid="ALCResolvingHandlerInvoked">
+                        <data name="ClrInstanceID" inType="win:UInt16" />
+                        <data name="AssemblyName" inType="win:UnicodeString" />
+                        <data name="HandlerName" inType="win:UnicodeString" />
+                        <data name="ResolvedAssembly" inType="win:UnicodeString" />
+                        <UserData>
+                            <ALCResolvingHandlerInvoked xmlns="myNs">
+                                <ClrInstanceID> %1 </ClrInstanceID>
+                                <AssemblyName> %2 </AssemblyName>
+                                <HandlerName> %3 </HandlerName>
+                                <ResolvedAssembly> %4 </ResolvedAssembly>
+                            </ALCResolvingHandlerInvoked>
                         </UserData>
                     </template>
 
@@ -3336,6 +3352,11 @@
                            keywords ="BinderKeyword" opcode="FallbackToDefaultALC"
                            task="CLRBinder"
                            symbol="FallbackToDefaultALC" message="$(string.RuntimePublisher.FallbackToDefaultALCEventMessage)"/>
+
+                    <event value="303" version="0" level="win:Informational"  template="ALCResolvingHandlerInvoked"
+                           keywords ="BinderKeyword" opcode="ALCResolvingHandlerInvoked"
+                           task="CLRBinder"
+                           symbol="ALCResolvingHandlerInvoked" message="$(string.RuntimePublisher.ALCResolvingHandlerInvokedEventMessage)"/>
 
                     <!-- CLR Security events -->
                     <event value="181" version="0" level="win:Verbose"  template="StrongNameVerification"
@@ -6654,6 +6675,7 @@
                 <string id="RuntimePublisher.AppDomainUnloadEventMessage" value="AppDomainID=%1;%nAppDomainFlags=%2;%nAppDomainName=%3" />
                 <string id="RuntimePublisher.AppDomainUnload_V1EventMessage" value="AppDomainID=%1;%nAppDomainFlags=%2;%nAppDomainName=%3;%nAppDomainIndex=%4;%nClrInstanceID=%5" />
                 <string id="RuntimePublisher.FallbackToDefaultALCEventMessage" value="BindRequestID=%1;%nClrInstanceID=%2" />
+                <string id="RuntimePublisher.ALCResolvingHandlerInvokedEventMessage" value="ClrInstanceID=%1;%nAssemblyName=%2;%nHandlerName=%3;%nResolvedAssembly=%4" />
                 <string id="RuntimePublisher.AssemblyBindEventMessage" value="BindRequestID=%1;%nClrInstanceID=%2;%nEntryPoint=%3;%nAssemblyName=%4" />
                 <string id="RuntimePublisher.StackEventMessage" value="ClrInstanceID=%1;%nReserved1=%2;%nReserved2=%3;%nFrameCount=%4;%nStack=%5" />
                 <string id="RuntimePublisher.AppDomainMemAllocatedEventMessage" value="AppDomainID=%1;%nAllocated=%2;%nClrInstanceID=%3" />
@@ -7241,6 +7263,7 @@
                 <string id="RuntimePublisher.AssemblyBindStartOpcodeMessage" value="AssemblyBindStart" />
                 <string id="RuntimePublisher.AssemblyBindEndOpcodeMessage" value="AssemblyBindEnd" />
                 <string id="RuntimePublisher.FallbackToDefaultALCOpcodeMessage" value="FallbackToDefaultALC" />
+                <string id="RuntimePublisher.ALCResolvingHandlerInvokedOpcodeMessage" value="ALCResolvingHandlerInvoked" />
                 <string id="RuntimePublisher.CLRStackWalkOpcodeMessage" value="Walk" />
                 <string id="RuntimePublisher.AppDomainMemAllocatedOpcodeMessage" value="MemAllocated" />
                 <string id="RuntimePublisher.AppDomainMemSurvivedOpcodeMessage" value="MemSurvived" />

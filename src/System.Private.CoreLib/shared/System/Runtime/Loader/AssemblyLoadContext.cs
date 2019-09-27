@@ -594,6 +594,14 @@ namespace System.Runtime.Loader
                 foreach (Func<AssemblyLoadContext, AssemblyName, Assembly> handler in assemblyResolveHandler.GetInvocationList())
                 {
                     resolvedAssembly = handler(this, assemblyName);
+                    if (Assembly.IsBinderTracingEnabled())
+                    {
+                        AssemblyLoadContext.FireResolvingHandlerInvoked(
+                            assemblyName.FullName,
+                            handler.Method.Name,
+                            resolvedAssembly != null ? resolvedAssembly.Location : "null");
+                    }
+
                     if (resolvedAssembly != null)
                     {
                         return resolvedAssembly;

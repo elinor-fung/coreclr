@@ -1419,6 +1419,15 @@ BOOL QCALLTYPE AssemblyNative::InternalTryGetRawMetadata(
 }
 
 // static
+FCIMPL0(bool, AssemblyNative::IsBinderTracingEnabled)
+{
+    FCALL_CONTRACT;
+
+    return BinderTracing::IsEnabled();
+}
+FCIMPLEND
+
+// static
 void QCALLTYPE AssemblyNative::FireLoadFileContextCreated(int n)
 {
     QCALL_CONTRACT;
@@ -1426,6 +1435,18 @@ void QCALLTYPE AssemblyNative::FireLoadFileContextCreated(int n)
     BEGIN_QCALL;
 
     FireEtwFallbackToDefaultALC(&BinderTracing::GetCurrentRequestId(), n);
+
+    END_QCALL;
+}
+
+// static
+void QCALLTYPE AssemblyNative::FireResolvingHandlerInvoked(LPCWSTR assemblyName, LPCWSTR handlerName, LPCWSTR resolvedAssemblyLocation)
+{
+    QCALL_CONTRACT;
+
+    BEGIN_QCALL;
+
+    FireEtwALCResolvingHandlerInvoked(GetClrInstanceId(), assemblyName, handlerName, resolvedAssemblyLocation);
 
     END_QCALL;
 }

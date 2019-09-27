@@ -10,6 +10,8 @@
 
 namespace BinderTracing
 {
+    bool IsEnabled();
+
     void AssemblyBindStart(BINDER_SPACE::AssemblyName *pAssemblyName, uint16_t entryPointId);
     void AssemblyBindEnd(BINDER_SPACE::AssemblyName *pAssemblyName, uint16_t entryPointId);
 

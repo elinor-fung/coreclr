@@ -32,6 +32,15 @@ namespace
     const WCHAR *s_activityName = W("AssemblyBind");
 }
 
+bool BinderTracing::IsEnabled()
+{
+#ifdef FEATURE_EVENT_TRACE
+    // Just check for the AssemblyBindStart event being enabled.
+    return EventEnabledAssemblyBindStart();
+#endif // FEATURE_EVENT_TRACE
+    return false;
+}
+
 const GUID& BinderTracing::GetCurrentRequestId()
 {
     return s_RequestId;
