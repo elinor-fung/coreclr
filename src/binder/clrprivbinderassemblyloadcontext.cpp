@@ -58,8 +58,6 @@ HRESULT CLRPrivBinderAssemblyLoadContext::BindAssemblyByName(IAssemblyName     *
     SAFE_NEW(pAssemblyName, AssemblyName);
     IF_FAIL_GO(pAssemblyName->Init(pIAssemblyName));
         
-    BinderTracing::AssemblyBindStart(pAssemblyName, 2);
-
     // When LoadContext needs to resolve an assembly reference, it will go through the following lookup order:
     //
     // 1) Lookup the assembly within the LoadContext itself. If assembly is found, use it.
@@ -73,6 +71,8 @@ HRESULT CLRPrivBinderAssemblyLoadContext::BindAssemblyByName(IAssemblyName     *
     // a different (or even the same!) version.
         
     {
+        BinderTracing::AssemblyBindEvent bindEvent { pAssemblyName };
+
         // Step 1 - Try to find the assembly within the LoadContext.
         hr = BindAssemblyByNameWorker(pAssemblyName, &pCoreCLRFoundAssembly);
         if ((hr == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) ||
@@ -100,6 +100,8 @@ HRESULT CLRPrivBinderAssemblyLoadContext::BindAssemblyByName(IAssemblyName     *
                 }
             }
         }
+
+        bindEvent.SetResult(pCoreCLRFoundAssembly);
     }
         
     IF_FAIL_GO(hr);
@@ -111,8 +113,6 @@ HRESULT CLRPrivBinderAssemblyLoadContext::BindAssemblyByName(IAssemblyName     *
     // extract the reference now.
     *ppAssembly = pCoreCLRFoundAssembly.Extract();
 Exit:;        
-    BinderTracing::AssemblyBindEnd(pAssemblyName, 2);
-
     return hr;
 }
 
@@ -141,35 +141,35 @@ HRESULT CLRPrivBinderAssemblyLoadContext::BindUsingPEImage( /* in */ PEImage *pP
         SAFE_NEW(pAssemblyName, AssemblyName);
         IF_FAIL_GO(pAssemblyName->Init(pIMetaDataAssemblyImport, PeKind));
         
-        BinderTracing::AssemblyBindStart(pAssemblyName, 3);
-
-        // Validate architecture
-        if (!BINDER_SPACE::Assembly::IsValidArchitecture(pAssemblyName->GetArchitecture()))
         {
-            IF_FAIL_GO(HRESULT_FROM_WIN32(ERROR_BAD_FORMAT));
-        }
-        
-        // Disallow attempt to bind to the core library. Aside from that,
-        // the LoadContext can load any assembly (even if it was in a different LoadContext like TPA).
-        if (pAssemblyName->IsMscorlib())
-        {
-            IF_FAIL_GO(HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND));
-        }
+            BinderTracing::AssemblyBindEvent bindEvent { pAssemblyName };
 
-        hr = AssemblyBinder::BindUsingPEImage(&m_appContext, pAssemblyName, pPEImage, PeKind, pIMetaDataAssemblyImport, &pCoreCLRFoundAssembly);
-        if (hr == S_OK)
-        {
-            _ASSERTE(pCoreCLRFoundAssembly != NULL);
-            pCoreCLRFoundAssembly->SetBinder(this);
-            *ppAssembly = pCoreCLRFoundAssembly.Extract();
+            // Validate architecture
+            if (!BINDER_SPACE::Assembly::IsValidArchitecture(pAssemblyName->GetArchitecture()))
+            {
+                IF_FAIL_GO(HRESULT_FROM_WIN32(ERROR_BAD_FORMAT));
+            }
+            
+            // Disallow attempt to bind to the core library. Aside from that,
+            // the LoadContext can load any assembly (even if it was in a different LoadContext like TPA).
+            if (pAssemblyName->IsMscorlib())
+            {
+                IF_FAIL_GO(HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND));
+            }
 
-            BinderTracing::AssemblyBindEnd(pAssemblyName, 3);
+            hr = AssemblyBinder::BindUsingPEImage(&m_appContext, pAssemblyName, pPEImage, PeKind, pIMetaDataAssemblyImport, &pCoreCLRFoundAssembly);
+            if (hr == S_OK)
+            {
+                _ASSERTE(pCoreCLRFoundAssembly != NULL);
+                pCoreCLRFoundAssembly->SetBinder(this);
+                *ppAssembly = pCoreCLRFoundAssembly.Extract();
+
+                bindEvent.SetResult(pCoreCLRFoundAssembly);
+            }
         }
 Exit:;        
     }
     EX_CATCH_HRESULT(hr);
-    if (FAILED(hr))
-        BinderTracing::AssemblyBindEnd(nullptr, 3);
 
     return hr;
 }

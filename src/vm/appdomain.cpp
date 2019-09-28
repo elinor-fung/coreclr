@@ -6533,7 +6533,7 @@ HRESULT RuntimeInvokeHostAssemblyResolver(INT_PTR pManagedAssemblyLoadContextToB
                 // Switch to pre-emp mode before calling into the binder
                 GCX_PREEMP();
 
-                FireEtwFallbackToDefaultALC(&BinderTracing::GetCurrentRequestId(), GetClrInstanceId());
+                FireEtwFallbackToDefaultALC(GetClrInstanceId());
 
                 ICLRPrivAssembly *pCoreCLRFoundAssembly = NULL;
                 hr = pTPABinder->BindAssemblyByName(pIAssemblyName, &pCoreCLRFoundAssembly);

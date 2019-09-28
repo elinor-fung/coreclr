@@ -392,7 +392,7 @@
                           message="$(string.RuntimePublisher.BinderTaskMessage)">
                         <opcodes>
                             <opcode name="AssemblyBindStart" message="$(string.RuntimePublisher.AssemblyBindStartOpcodeMessage)" symbol="CLR_ASSEMBLY_BIND_START_OPCODE" value="11" />
-                            <opcode name="AssemblyBindEnd" message="$(string.RuntimePublisher.AssemblyBindEndOpcodeMessage)" symbol="CLR_ASSEMBLY_BIND_END_OPCODE" value="12" />
+                            <opcode name="AssemblyBindStop" message="$(string.RuntimePublisher.AssemblyBindStopOpcodeMessage)" symbol="CLR_ASSEMBLY_BIND_END_OPCODE" value="12" />
                             <opcode name="FallbackToDefaultALC" message="$(string.RuntimePublisher.FallbackToDefaultALCOpcodeMessage)" symbol="CLR_FALLBACKTODEFAULTALC_OPCODE" value="13" />
                             <opcode name="ALCResolvingHandlerInvoked" message="$(string.RuntimePublisher.ALCResolvingHandlerInvokedOpcodeMessage)" symbol="CLR_ALC_RESOLVING_HANDLER_INVOKED_OPCODE" value="14" />
                         </opcodes>
@@ -475,10 +475,6 @@
                       <map value="0x6" message="$(string.RuntimePublisher.GCHandleKind.DependentMessage)"/>
                       <map value="0x7" message="$(string.RuntimePublisher.GCHandleKind.AsyncPinnedMessage)"/>
                       <map value="0x8" message="$(string.RuntimePublisher.GCHandleKind.SizedRefMessage)"/>
-                    </valueMap>
-
-                    <valueMap name="BindEntryPointMap">
-                      <map value="0x0" message="$(string.RuntimePublisher.BindEntryPoint.TestMessage)"/>
                     </valueMap>
 
                     <!-- BitMaps -->
@@ -1639,29 +1635,44 @@
                         </UserData>
                     </template>
 
-                    <template tid="AssemblyBind">
-                        <data name="BindRequestID" inType="win:GUID" />
+                    <template tid="AssemblyBindStart">
                         <data name="ClrInstanceID" inType="win:UInt16" />
-                        <data name="EntryPoint" inType="win:UInt16" map="BindEntryPointMap" />
                         <data name="AssemblyName" inType="win:UnicodeString" />
+                        <data name="EntryPoint" inType="win:UInt16" />
+                        <data name="AssemblyLoadContext" inType="win:UnicodeString" />
                         <UserData>
-                            <AssemblyBind xmlns="myNs">
-                                <BindRequestID> %1 </BindRequestID>
-                                <ClrInstanceID> %2 </ClrInstanceID>
+                            <AssemblyBindStart xmlns="myNs">
+                                <ClrInstanceID> %1 </ClrInstanceID>
+                                <AssemblyName> %2 </AssemblyName>
                                 <EntryPoint> %3 </EntryPoint>
-                                <AssemblyName> %4 </AssemblyName>
-                            </AssemblyBind>
+                                <AssemblyLoadContext> %4 </AssemblyLoadContext>
+                            </AssemblyBindStart>
+                        </UserData>
+                    </template>
+
+                    <template tid="AssemblyBindStop">
+                        <data name="ClrInstanceID" inType="win:UInt16" />
+                        <data name="AssemblyName" inType="win:UnicodeString" />
+                        <data name="EntryPoint" inType="win:UInt16" />
+                        <data name="Success" inType="win:Boolean" />
+                        <data name="ResultPath" inType="win:UnicodeString" />
+                        <UserData>
+                            <AssemblyBindStop xmlns="myNs">
+                                <ClrInstanceID> %1 </ClrInstanceID>
+                                <AssemblyName> %2 </AssemblyName>
+                                <EntryPoint> %3 </EntryPoint>
+                                <Success> %4 </Success>
+                                <ResultPath> %5 </ResultPath>
+                            </AssemblyBindStop>
                         </UserData>
                     </template>
 
                     <template tid="FallbackToDefaultALC">
-                        <data name="BindRequestID" inType="win:GUID" />
                         <data name="ClrInstanceID" inType="win:UInt16" />
 
                         <UserData>
                             <FallbackToDefaultALC xmlns="myNs">
-                                <BindRequestID> %1 </BindRequestID>
-                                <ClrInstanceID> %2 </ClrInstanceID>
+                                <ClrInstanceID> %1 </ClrInstanceID>
                             </FallbackToDefaultALC>
                         </UserData>
                     </template>
@@ -3338,15 +3349,15 @@
                            task="CLRPerfTrack"
                            symbol="ModuleRangeLoad" message="$(string.RuntimePublisher.ModuleRangeLoadEventMessage)"/>
 
-                    <event value="300" version="0" level="win:Informational"  template="AssemblyBind"
+                    <event value="300" version="0" level="win:Informational"  template="AssemblyBindStart"
                            keywords ="BinderKeyword" opcode="AssemblyBindStart"
                            task="CLRBinder"
-                           symbol="AssemblyBindStart" message="$(string.RuntimePublisher.AssemblyBindEventMessage)"/>
+                           symbol="AssemblyBindStart" message="$(string.RuntimePublisher.AssemblyBindStartEventMessage)"/>
 
-                    <event value="301" version="0" level="win:Informational"  template="AssemblyBind"
-                           keywords ="BinderKeyword" opcode="AssemblyBindEnd"
+                    <event value="301" version="0" level="win:Informational"  template="AssemblyBindStop"
+                           keywords ="BinderKeyword" opcode="AssemblyBindStop"
                            task="CLRBinder"
-                           symbol="AssemblyBindEnd" message="$(string.RuntimePublisher.AssemblyBindEventMessage)"/>
+                           symbol="AssemblyBindStop" message="$(string.RuntimePublisher.AssemblyBindStopEventMessage)"/>
 
                     <event value="302" version="0" level="win:Informational"  template="FallbackToDefaultALC"
                            keywords ="BinderKeyword" opcode="FallbackToDefaultALC"
@@ -6674,9 +6685,10 @@
                 <string id="RuntimePublisher.AppDomainLoad_V1EventMessage" value="AppDomainID=%1;%nAppDomainFlags=%2;%nAppDomainName=%3;%nAppDomainIndex=%4;%nClrInstanceID=%5" />
                 <string id="RuntimePublisher.AppDomainUnloadEventMessage" value="AppDomainID=%1;%nAppDomainFlags=%2;%nAppDomainName=%3" />
                 <string id="RuntimePublisher.AppDomainUnload_V1EventMessage" value="AppDomainID=%1;%nAppDomainFlags=%2;%nAppDomainName=%3;%nAppDomainIndex=%4;%nClrInstanceID=%5" />
-                <string id="RuntimePublisher.FallbackToDefaultALCEventMessage" value="BindRequestID=%1;%nClrInstanceID=%2" />
+                <string id="RuntimePublisher.FallbackToDefaultALCEventMessage" value="ClrInstanceID=%1" />
                 <string id="RuntimePublisher.ALCResolvingHandlerInvokedEventMessage" value="ClrInstanceID=%1;%nAssemblyName=%2;%nHandlerName=%3;%nResolvedAssembly=%4" />
-                <string id="RuntimePublisher.AssemblyBindEventMessage" value="BindRequestID=%1;%nClrInstanceID=%2;%nEntryPoint=%3;%nAssemblyName=%4" />
+                <string id="RuntimePublisher.AssemblyBindStartEventMessage" value="ClrInstanceID=%1;%nAssemblyName=%2;%nEntryPoint=%3;%nAssemblyLoadContext=%4" />
+                <string id="RuntimePublisher.AssemblyBindStopEventMessage" value="ClrInstanceID=%1;%nAssemblyName=%2;%nEntryPoint=%3;%nSuccess=%3;%nResultPath=%4" />
                 <string id="RuntimePublisher.StackEventMessage" value="ClrInstanceID=%1;%nReserved1=%2;%nReserved2=%3;%nFrameCount=%4;%nStack=%5" />
                 <string id="RuntimePublisher.AppDomainMemAllocatedEventMessage" value="AppDomainID=%1;%nAllocated=%2;%nClrInstanceID=%3" />
                 <string id="RuntimePublisher.AppDomainMemSurvivedEventMessage" value="AppDomainID=%1;%nSurvived=%2;%nProcessSurvived=%3;%nClrInstanceID=%4" />
@@ -6902,7 +6914,6 @@
                 <string id="RuntimePublisher.Assembly.DynamicMapMessage" value="Dynamic" />
                 <string id="RuntimePublisher.Assembly.NativeMapMessage" value="Native" />
                 <string id="RuntimePublisher.Assembly.CollectibleMapMessage" value="Collectible" />
-                <string id="RuntimePublisher.BindEntryPoint.TestMessage" value="Test" />
                 <string id="RuntimePublisher.Module.DomainNeutralMapMessage" value="DomainNeutral" />
                 <string id="RuntimePublisher.Module.NativeMapMessage" value="Native" />
                 <string id="RuntimePublisher.Module.DynamicMapMessage" value="Dynamic" />
@@ -7261,7 +7272,7 @@
                 <string id="RuntimePublisher.AppDomainLoadOpcodeMessage" value="AppDomainLoad" />
                 <string id="RuntimePublisher.AppDomainUnloadOpcodeMessage" value="AppDomainUnload" />
                 <string id="RuntimePublisher.AssemblyBindStartOpcodeMessage" value="AssemblyBindStart" />
-                <string id="RuntimePublisher.AssemblyBindEndOpcodeMessage" value="AssemblyBindEnd" />
+                <string id="RuntimePublisher.AssemblyBindStopOpcodeMessage" value="AssemblyBindStop" />
                 <string id="RuntimePublisher.FallbackToDefaultALCOpcodeMessage" value="FallbackToDefaultALC" />
                 <string id="RuntimePublisher.ALCResolvingHandlerInvokedOpcodeMessage" value="ALCResolvingHandlerInvoked" />
                 <string id="RuntimePublisher.CLRStackWalkOpcodeMessage" value="Walk" />

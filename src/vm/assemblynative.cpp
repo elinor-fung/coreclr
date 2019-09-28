@@ -1434,7 +1434,7 @@ void QCALLTYPE AssemblyNative::FireLoadFileContextCreated(int n)
 
     BEGIN_QCALL;
 
-    FireEtwFallbackToDefaultALC(&BinderTracing::GetCurrentRequestId(), n);
+    FireEtwFallbackToDefaultALC(n);
 
     END_QCALL;
 }
