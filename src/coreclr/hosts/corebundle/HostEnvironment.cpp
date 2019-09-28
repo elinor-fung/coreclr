@@ -12,30 +12,6 @@
 #include "HostEnvironment.h"
 #include "error.h"
 
-// Attempts to load CoreCLR.dll from the given directory.
-// On success pins the dll, sets m_coreCLRDirectoryPath and returns the HMODULE.
-// On failure returns nullptr.
-
-static HMODULE TryLoadCoreCLR(const char* directoryPath)
-{
-    char coreCLRPath[MAX_LONGPATH];
-    strcpy(coreCLRPath, directoryPath);
-    strcat(coreCLRPath, "CoreCLR.dll");
-
-    HMODULE result = ::LoadLibraryExA(coreCLRPath, NULL, 0);
-
-    if (!result) {
-        return nullptr;
-    }
-
-    // Pin the module - CoreCLR.dll does not support being unloaded.
-    HMODULE dummy_coreCLRModule;
-    ::GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_PIN, coreCLRPath, &dummy_coreCLRModule);
-
-    return result;
-}
-
-
 bool HostEnvironment::Setup()
 {
     // Discover the path to this exe's module. All other files are expected to be in the same directory.
@@ -71,21 +47,6 @@ bool HostEnvironment::Setup()
     extension[1] = 'd';
     extension[2] = 'l';
     extension[3] = 'l';
-
-    // Load CoreCLR
-    m_coreCLRModule = TryLoadCoreCLR(m_hostDir);
-
-    if (m_coreCLRModule == nullptr) {
-        error("Couldn't load coreclr.dll.");
-        return false;
-    }
-
-    m_initializeCoreCLR =
-        (coreclr_initialize_ptr)::GetProcAddress(m_coreCLRModule, "coreclr_initialize");
-    m_executeAssembly =
-        (coreclr_execute_assembly_ptr)::GetProcAddress(m_coreCLRModule, "coreclr_execute_assembly");
-    m_shutdownCoreCLR =
-        (coreclr_shutdown_2_ptr)::GetProcAddress(m_coreCLRModule, "coreclr_shutdown_2");
 
     m_Tpa.Compute(m_hostDir);
 

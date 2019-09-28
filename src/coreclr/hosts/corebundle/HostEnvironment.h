@@ -22,9 +22,6 @@ class HostEnvironment
     // The main app to run
     char m_appPath[MAX_LONGPATH];
 
-    // The loaded coreclr Module
-    HMODULE m_coreCLRModule;
-
     TPA m_Tpa;
 
     // A few procs from CoreCLR module
@@ -37,22 +34,11 @@ class HostEnvironment
 
 public:
 
-    HostEnvironment()
-        :m_coreCLRModule(nullptr),
-        m_initializeCoreCLR(nullptr),
-        m_executeAssembly(nullptr),
-        m_shutdownCoreCLR(nullptr)
-    {}
-
     bool Setup();
 
     const char* AppPath() const { return m_appPath; }
     const char* HostPath() const { return m_hostPath; }
     const char* HostDir() const { return m_hostDir; }
-
-    coreclr_initialize_ptr CoreCLRInitialize() const { return m_initializeCoreCLR; }
-    coreclr_execute_assembly_ptr ExecuteAssembly() const { return m_executeAssembly; }
-    coreclr_shutdown_2_ptr ShutdownCoreCLR() const { return m_shutdownCoreCLR; }
 
     // Returns the semicolon-separated list of paths to runtime dlls that are considered trusted.
     // On first call, scans the coreclr directory for dlls and adds them all to the list.

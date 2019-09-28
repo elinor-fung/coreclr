@@ -31,12 +31,10 @@ _add_executable(CoreBundle
 )
 
 target_link_libraries(CoreBundle
-    utilcodestaticnohost
     advapi32.lib
     oleaut32.lib
     user32.lib
-    ${STATIC_MT_CRT_LIB}
-    ${STATIC_MT_VCRT_LIB}
+    coreclr_static
 )
 
 # Can't compile on linux yet so only add for windows

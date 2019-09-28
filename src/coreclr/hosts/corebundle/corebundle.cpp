@@ -85,7 +85,7 @@ int __cdecl wmain(const int argc, const char* argv[])
     void* hostHandle;
     UINT domainId;
 
-    int st = hostEnvironment.CoreCLRInitialize()(
+    int st = coreclr_initialize(
         hostEnvironment.HostPath(),
         "corebundle",
         sizeof(propertyKeys) / sizeof(propertyKeys[0]),
@@ -101,7 +101,7 @@ int __cdecl wmain(const int argc, const char* argv[])
         return false;
     }
 
-    st = hostEnvironment.ExecuteAssembly()(
+    st = coreclr_execute_assembly(
         hostHandle,
         domainId,
         argc,
@@ -116,7 +116,7 @@ int __cdecl wmain(const int argc, const char* argv[])
     }
 
     exitCode = 0;
-    st = hostEnvironment.ShutdownCoreCLR()(hostHandle, domainId, &exitCode);
+    st = coreclr_shutdown_2(hostHandle, domainId, &exitCode);
     if (!SUCCEEDED(st))
     {
         error("coreclr_shutdown failed", st);

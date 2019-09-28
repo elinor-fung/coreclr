@@ -561,6 +561,9 @@ if %__BuildNative% EQU 1 (
 
     pushd "%__IntermediatesDir%"
     set __ExtraCmakeArgs=!___SDKVersion! !___CrossBuildDefine! "-DCLR_CMAKE_TARGET_OS=%__BuildOS%" "-DCLR_CMAKE_PACKAGES_DIR=%__PackagesDir%" "-DCLR_CMAKE_PGO_INSTRUMENT=%__PgoInstrument%" "-DCLR_CMAKE_OPTDATA_VERSION=%__PgoOptDataVersion%" "-DCLR_CMAKE_PGO_OPTIMIZE=%__PgoOptimize%"
+
+    set __ExtraCmakeArgs=!__ExtraCmakeArgs! "-DFEATURE_MERGE_JIT_AND_ENGINE=1"
+
     call "%__SourceDir%\pal\tools\gen-buildsys-win.bat" "%__ProjectDir%" %__VSVersion% %__BuildArch% !__ExtraCmakeArgs!
     @if defined _echo @echo on
     popd
