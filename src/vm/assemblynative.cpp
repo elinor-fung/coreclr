@@ -125,6 +125,8 @@ FCIMPL6(Object*, AssemblyNative::Load, AssemblyNameBaseObject* assemblyNameUNSAF
         spec.SetFallbackLoadContextBinderForRequestingAssembly(pRefAssemblyManifestFile->GetFallbackLoadContextBinder());
     }
 
+    BinderTracing::AutoSetEntryPoint setBindEntry(BinderTracing::EntryPoint::Load);
+
     Assembly *pAssembly;
     
     {
@@ -283,7 +285,8 @@ void QCALLTYPE AssemblyNative::LoadFromPath(INT_PTR ptrNativeAssemblyLoadContext
         }
     }
 #endif // FEATURE_PREJIT
-    
+
+    BinderTracing::AutoSetEntryPoint setBindEntry(BinderTracing::EntryPoint::LoadFromPath, pwzNIPath != nullptr ? pwzNIPath : pwzILPath);
     Assembly *pLoadedAssembly = AssemblyNative::LoadFromPEImage(pBinderContext, pILImage, pNIImage);
     
     {
@@ -331,6 +334,8 @@ void QCALLTYPE AssemblyNative::LoadFromStream(INT_PTR ptrNativeAssemblyLoadConte
         // Loading IJW assemblies into a collectible AssemblyLoadContext is not allowed
         ThrowHR(COR_E_BADIMAGEFORMAT, BFA_IJW_IN_COLLECTIBLE_ALC);
     }
+
+    BinderTracing::AutoSetEntryPoint setBindEntry(BinderTracing::EntryPoint::LoadFromStream);
 
     // Pass the stream based assembly as IL and NI in an attempt to bind and load it
     Assembly* pLoadedAssembly = AssemblyNative::LoadFromPEImage(pBinderContext, pILImage, NULL); 

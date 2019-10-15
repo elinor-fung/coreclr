@@ -27,6 +27,7 @@ using namespace BINDER_SPACE;
 namespace
 {
     thread_local uint32_t s_RequestDepth = 0;
+    thread_local BinderTracing::EntryPoint s_EntryPoint;
 
     const WCHAR *s_activityName = W("AssemblyBind");
 
@@ -72,6 +73,34 @@ namespace
 
         s_RequestDepth++;
         FireEtwAssemblyBindStart(GetClrInstanceId(), name, entryPointId, alc, &activityId, &relatedActivityId);
+#endif // FEATURE_EVENT_TRACE
+    }
+
+    void FireAssemblyBindStart(const WCHAR *name, BinderTracing::EntryPoint entryPointId, OBJECTREF *managedALC)
+    {
+#ifdef FEATURE_EVENT_TRACE
+        if (!EventEnabledAssemblyBindStart())
+            return;
+
+        SString alcName;
+        {
+            GCX_COOP();
+            struct _gc {
+                STRINGREF alcName;
+            } gc;
+            ZeroMemory(&gc, sizeof(gc));
+
+            GCPROTECT_BEGIN(gc);
+
+            MethodDescCallSite toString(METHOD__OBJECT__TO_STRING, managedALC);
+            ARG_SLOT args[] = { ObjToArgSlot(*managedALC) };
+            gc.alcName = toString.Call_RetSTRINGREF(args);
+            gc.alcName->GetSString(alcName);
+
+            GCPROTECT_END();
+        }
+
+        FireAssemblyBindStart(name, entryPointId, alcName.GetUnicode());
 #endif // FEATURE_EVENT_TRACE
     }
 
@@ -131,13 +160,23 @@ bool BinderTracing::IsEnabled()
 namespace BinderTracing
 {
     AssemblyBindEvent::AssemblyBindEvent(AssemblyName *assemblyName, const WCHAR *alc)
-        : m_entryPoint { EntryPoint::Unknown }
+        : m_entryPoint { s_EntryPoint }
         , m_success { false }
     {
         _ASSERTE(assemblyName != nullptr);
 
         assemblyName->GetDisplayName(m_assemblyName, AssemblyName::INCLUDE_VERSION);
         FireAssemblyBindStart(m_assemblyName.GetUnicode(), m_entryPoint, alc);
+    }
+
+    AssemblyBindEvent::AssemblyBindEvent(AssemblyName *assemblyName, OBJECTREF *managedALC)
+        : m_entryPoint { s_EntryPoint }
+        , m_success { false }
+    {
+        _ASSERTE(assemblyName != nullptr);
+
+        assemblyName->GetDisplayName(m_assemblyName, AssemblyName::INCLUDE_VERSION);
+        FireAssemblyBindStart(m_assemblyName.GetUnicode(), m_entryPoint, managedALC);
     }
 
     AssemblyBindEvent::~AssemblyBindEvent()
@@ -150,5 +189,18 @@ namespace BinderTracing
         m_success = assembly != nullptr;
         if (m_success)
             m_resultPath = assembly->GetPEImage()->GetPath();
+    }
+
+    AutoSetEntryPoint::AutoSetEntryPoint(EntryPoint entryPoint, const WCHAR *additionalData)
+        : m_entryPoint { entryPoint }
+        , m_prevEntryPoint { s_EntryPoint }
+    {
+        s_EntryPoint = m_entryPoint;
+    }
+
+    AutoSetEntryPoint::~AutoSetEntryPoint()
+    {
+        _ASSERTE(s_EntryPoint == m_entryPoint);
+        s_EntryPoint = m_prevEntryPoint;
     }
 }

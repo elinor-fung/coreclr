@@ -6524,6 +6524,8 @@ HRESULT RuntimeInvokeHostAssemblyResolver(INT_PTR pManagedAssemblyLoadContextToB
                 fResolvedAssembly = true;
             }
 
+            FireEtwALCLoadInvoked(GetClrInstanceId(), fResolvedAssembly);
+
             // Step 3 (of CLRPrivBinderAssemblyLoadContext::BindUsingAssemblyName)
             if (!fResolvedAssembly && !isSatelliteAssemblyRequest)
             {

@@ -71,7 +71,7 @@ HRESULT CLRPrivBinderAssemblyLoadContext::BindAssemblyByName(IAssemblyName     *
     // a different (or even the same!) version.
         
     {
-        BinderTracing::AssemblyBindEvent bindEvent { pAssemblyName };
+        BinderTracing::AssemblyBindEvent bindEvent { pAssemblyName, reinterpret_cast<OBJECTREF *>(m_ptrManagedAssemblyLoadContext) };
 
         // Step 1 - Try to find the assembly within the LoadContext.
         hr = BindAssemblyByNameWorker(pAssemblyName, &pCoreCLRFoundAssembly);
@@ -142,7 +142,7 @@ HRESULT CLRPrivBinderAssemblyLoadContext::BindUsingPEImage( /* in */ PEImage *pP
         IF_FAIL_GO(pAssemblyName->Init(pIMetaDataAssemblyImport, PeKind));
         
         {
-            BinderTracing::AssemblyBindEvent bindEvent { pAssemblyName };
+            BinderTracing::AssemblyBindEvent bindEvent { pAssemblyName, reinterpret_cast<OBJECTREF *>(m_ptrManagedAssemblyLoadContext)  };
 
             // Validate architecture
             if (!BINDER_SPACE::Assembly::IsValidArchitecture(pAssemblyName->GetArchitecture()))

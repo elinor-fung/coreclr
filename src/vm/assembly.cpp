@@ -50,6 +50,7 @@
 
 #include "peimagelayout.inl"
 
+#include "../binder/inc/bindertracing.h"
 
 // Define these macro's to do strict validation for jit lock and class init entry leaks.
 // This defines determine if the asserts that verify for these leaks are defined or not.
@@ -1115,7 +1116,8 @@ Module * Assembly::FindModuleByTypeRef(
                 RETURN NULL;
             }
 
-            
+            BinderTracing::AutoSetEntryPoint setBindEntry(BinderTracing::EntryPoint::JIT);
+
             DomainAssembly * pDomainAssembly = pModule->LoadAssembly(
                     tkType, 
                     szNamespace, 

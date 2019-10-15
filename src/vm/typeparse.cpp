@@ -18,6 +18,7 @@
 #include "assemblynative.hpp"
 #include "fstring.h"
 
+#include "../binder/inc/bindertracing.h"
 
 //
 // TypeName
@@ -1540,6 +1541,7 @@ DomainAssembly * LoadDomainAssembly(
         spec.SetFallbackLoadContextBinderForRequestingAssembly(pRequestingAssemblyManifestFile->GetFallbackLoadContextBinder());
     }
 
+    BinderTracing::AutoSetEntryPoint setBindEntry(BinderTracing::EntryPoint::Reflection, pssOuterTypeName != nullptr ? pssOuterTypeName->GetUnicode() : nullptr);
     if (bThrowIfNotFound)
     {
         pDomainAssembly = spec.LoadDomainAssembly(FILE_LOADED);

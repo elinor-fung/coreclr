@@ -394,7 +394,8 @@
                             <opcode name="AssemblyBindStart" message="$(string.RuntimePublisher.AssemblyBindStartOpcodeMessage)" symbol="CLR_ASSEMBLY_BIND_START_OPCODE" value="11" />
                             <opcode name="AssemblyBindStop" message="$(string.RuntimePublisher.AssemblyBindStopOpcodeMessage)" symbol="CLR_ASSEMBLY_BIND_END_OPCODE" value="12" />
                             <opcode name="FallbackToDefaultALC" message="$(string.RuntimePublisher.FallbackToDefaultALCOpcodeMessage)" symbol="CLR_FALLBACKTODEFAULTALC_OPCODE" value="13" />
-                            <opcode name="ALCResolvingHandlerInvoked" message="$(string.RuntimePublisher.ALCResolvingHandlerInvokedOpcodeMessage)" symbol="CLR_ALC_RESOLVING_HANDLER_INVOKED_OPCODE" value="14" />
+                            <opcode name="ALCLoadInvoked" message="$(string.RuntimePublisher.ALCLoadInvokedOpcodeMessage)" symbol="CLR_ALC_LOAD_INVOKED_OPCODE" value="14" />
+                            <opcode name="ALCResolvingHandlerInvoked" message="$(string.RuntimePublisher.ALCResolvingHandlerInvokedOpcodeMessage)" symbol="CLR_ALC_RESOLVING_HANDLER_INVOKED_OPCODE" value="15" />
                         </opcodes>
                     </task>
                 <!--Next available ID is 33-->
@@ -475,6 +476,15 @@
                       <map value="0x6" message="$(string.RuntimePublisher.GCHandleKind.DependentMessage)"/>
                       <map value="0x7" message="$(string.RuntimePublisher.GCHandleKind.AsyncPinnedMessage)"/>
                       <map value="0x8" message="$(string.RuntimePublisher.GCHandleKind.SizedRefMessage)"/>
+                    </valueMap>
+
+                    <valueMap name="BindEntryPointMap">
+                      <map value="0x0" message="$(string.RuntimePublisher.BindEntryPoint.UnknownMessage)"/>
+                      <map value="0x1" message="$(string.RuntimePublisher.BindEntryPoint.JITMessage)"/>
+                      <map value="0x2" message="$(string.RuntimePublisher.BindEntryPoint.LoadMessage)"/>
+                      <map value="0x3" message="$(string.RuntimePublisher.BindEntryPoint.LoadFromPathMessage)"/>
+                      <map value="0x4" message="$(string.RuntimePublisher.BindEntryPoint.LoadFromStreamMessage)"/>
+                      <map value="0x5" message="$(string.RuntimePublisher.BindEntryPoint.ReflectionMessage)"/>
                     </valueMap>
 
                     <!-- BitMaps -->
@@ -1638,7 +1648,7 @@
                     <template tid="AssemblyBindStart">
                         <data name="ClrInstanceID" inType="win:UInt16" />
                         <data name="AssemblyName" inType="win:UnicodeString" />
-                        <data name="EntryPoint" inType="win:UInt16" />
+                        <data name="EntryPoint" inType="win:UInt16" map="BindEntryPointMap" />
                         <data name="AssemblyLoadContext" inType="win:UnicodeString" />
                         <UserData>
                             <AssemblyBindStart xmlns="myNs">
@@ -1653,7 +1663,7 @@
                     <template tid="AssemblyBindStop">
                         <data name="ClrInstanceID" inType="win:UInt16" />
                         <data name="AssemblyName" inType="win:UnicodeString" />
-                        <data name="EntryPoint" inType="win:UInt16" />
+                        <data name="EntryPoint" inType="win:UInt16" map="BindEntryPointMap" />
                         <data name="Success" inType="win:Boolean" />
                         <data name="ResultPath" inType="win:UnicodeString" />
                         <UserData>
@@ -1669,11 +1679,21 @@
 
                     <template tid="FallbackToDefaultALC">
                         <data name="ClrInstanceID" inType="win:UInt16" />
-
                         <UserData>
                             <FallbackToDefaultALC xmlns="myNs">
                                 <ClrInstanceID> %1 </ClrInstanceID>
                             </FallbackToDefaultALC>
+                        </UserData>
+                    </template>
+
+                    <template tid="ALCLoadInvoked">
+                        <data name="ClrInstanceID" inType="win:UInt16" />
+                        <data name="Success" inType="win:Boolean" />
+                        <UserData>
+                            <ALCLoadInvoked xmlns="myNs">
+                                <ClrInstanceID> %1 </ClrInstanceID>
+                                <Success> %2 </Success>
+                            </ALCLoadInvoked>
                         </UserData>
                     </template>
 
@@ -3364,7 +3384,12 @@
                            task="CLRBinder"
                            symbol="FallbackToDefaultALC" message="$(string.RuntimePublisher.FallbackToDefaultALCEventMessage)"/>
 
-                    <event value="303" version="0" level="win:Informational"  template="ALCResolvingHandlerInvoked"
+                    <event value="303" version="0" level="win:Informational"  template="ALCLoadInvoked"
+                           keywords ="BinderKeyword" opcode="ALCLoadInvoked"
+                           task="CLRBinder"
+                           symbol="ALCLoadInvoked" message="$(string.RuntimePublisher.ALCLoadInvokedEventMessage)"/>
+
+                    <event value="304" version="0" level="win:Informational"  template="ALCResolvingHandlerInvoked"
                            keywords ="BinderKeyword" opcode="ALCResolvingHandlerInvoked"
                            task="CLRBinder"
                            symbol="ALCResolvingHandlerInvoked" message="$(string.RuntimePublisher.ALCResolvingHandlerInvokedEventMessage)"/>
@@ -6686,6 +6711,7 @@
                 <string id="RuntimePublisher.AppDomainUnloadEventMessage" value="AppDomainID=%1;%nAppDomainFlags=%2;%nAppDomainName=%3" />
                 <string id="RuntimePublisher.AppDomainUnload_V1EventMessage" value="AppDomainID=%1;%nAppDomainFlags=%2;%nAppDomainName=%3;%nAppDomainIndex=%4;%nClrInstanceID=%5" />
                 <string id="RuntimePublisher.FallbackToDefaultALCEventMessage" value="ClrInstanceID=%1" />
+                <string id="RuntimePublisher.ALCLoadInvokedEventMessage" value="ClrInstanceID=%1;%nSuccess=%2" />
                 <string id="RuntimePublisher.ALCResolvingHandlerInvokedEventMessage" value="ClrInstanceID=%1;%nAssemblyName=%2;%nHandlerName=%3;%nResolvedAssembly=%4" />
                 <string id="RuntimePublisher.AssemblyBindStartEventMessage" value="ClrInstanceID=%1;%nAssemblyName=%2;%nEntryPoint=%3;%nAssemblyLoadContext=%4" />
                 <string id="RuntimePublisher.AssemblyBindStopEventMessage" value="ClrInstanceID=%1;%nAssemblyName=%2;%nEntryPoint=%3;%nSuccess=%3;%nResultPath=%4" />
@@ -6914,6 +6940,12 @@
                 <string id="RuntimePublisher.Assembly.DynamicMapMessage" value="Dynamic" />
                 <string id="RuntimePublisher.Assembly.NativeMapMessage" value="Native" />
                 <string id="RuntimePublisher.Assembly.CollectibleMapMessage" value="Collectible" />
+                <string id="RuntimePublisher.BindEntryPoint.UnknownMessage" value="Unknown" />
+                <string id="RuntimePublisher.BindEntryPoint.JITMessage" value="JIT" />
+                <string id="RuntimePublisher.BindEntryPoint.LoadMessage" value="Load" />
+                <string id="RuntimePublisher.BindEntryPoint.LoadFromPathMessage" value="LoadFromPath" />
+                <string id="RuntimePublisher.BindEntryPoint.LoadFromStreamMessage" value="LoadFromStream" />
+                <string id="RuntimePublisher.BindEntryPoint.ReflectionMessage" value="Reflection" />
                 <string id="RuntimePublisher.Module.DomainNeutralMapMessage" value="DomainNeutral" />
                 <string id="RuntimePublisher.Module.NativeMapMessage" value="Native" />
                 <string id="RuntimePublisher.Module.DynamicMapMessage" value="Dynamic" />
@@ -7274,6 +7306,7 @@
                 <string id="RuntimePublisher.AssemblyBindStartOpcodeMessage" value="AssemblyBindStart" />
                 <string id="RuntimePublisher.AssemblyBindStopOpcodeMessage" value="AssemblyBindStop" />
                 <string id="RuntimePublisher.FallbackToDefaultALCOpcodeMessage" value="FallbackToDefaultALC" />
+                <string id="RuntimePublisher.ALCLoadInvokedOpcodeMessage" value="ALCLoadInvoked" />
                 <string id="RuntimePublisher.ALCResolvingHandlerInvokedOpcodeMessage" value="ALCResolvingHandlerInvoked" />
                 <string id="RuntimePublisher.CLRStackWalkOpcodeMessage" value="Walk" />
                 <string id="RuntimePublisher.AppDomainMemAllocatedOpcodeMessage" value="MemAllocated" />
