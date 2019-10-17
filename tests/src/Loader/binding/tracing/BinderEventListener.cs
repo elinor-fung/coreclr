@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
 using System.Linq;
+using System.Threading;
 using System.Reflection;
 using Xunit;
 
@@ -28,9 +29,27 @@ namespace BinderTracingTests
         public const EventKeywords BinderKeyword = (EventKeywords)0x4;
         public Dictionary<Guid, BindEvent> BindEvents = new Dictionary<Guid, BindEvent>();
 
-        public IEnumerable<BindEvent> GetEventsBySimpleName(string name)
+        public IEnumerable<BindEvent> WaitForEventsForAssembly(string name, int timeoutMilliseconds)
         {
-            return BindEvents.Values.Where(e => !e.Nested && e.AssemblyName.Name == name);
+            var startTime = DateTimeOffset.Now;
+
+            while (DateTimeOffset.Now.Subtract(startTime).TotalMilliseconds < timeoutMilliseconds)
+            {
+                // BindEvents.Values might be modified by OnEventWritten() after pertinent items
+                // are selected, so copy everything to a list and select on that.  (This is for
+                // testing purposes only; the number of events shouldn't be high.)
+                var values = BindEvents.Values.ToList();
+                var selected = values.Where(e => !e.Nested && e.AssemblyName.Name == name);
+
+                if (selected.Count() > 0)
+                {
+                    return selected;
+                }
+
+                Thread.Sleep(0);
+            }
+
+            return Enumerable.Empty<BindEvent>();
         }
 
         protected override void OnEventSourceCreated(EventSource eventSource)
