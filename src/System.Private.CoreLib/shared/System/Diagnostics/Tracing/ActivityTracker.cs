@@ -52,7 +52,7 @@ namespace System.Diagnostics.Tracing
         ///
         /// If activity tracing is not on, then activityId and relatedActivityId are not set
         /// </summary>
-        public void OnStart(string providerName, string activityName, int task, ref Guid activityId, ref Guid relatedActivityId, EventActivityOptions options)
+        public bool OnStart(string providerName, string activityName, int task, ref Guid activityId, ref Guid relatedActivityId, EventActivityOptions options)
         {
             if (m_current == null)        // We are not enabled
             {
@@ -60,12 +60,12 @@ namespace System.Diagnostics.Tracing
                 // until you use Tasks for the first time (which you may never do).   Thus we change it to pull rather tan push for whether
                 // we are enabled.
                 if (m_checkedForEnable)
-                    return;
+                    return false;
                 m_checkedForEnable = true;
                 if (TplEventSource.Log.IsEnabled(EventLevel.Informational, TplEventSource.Keywords.TasksFlowActivityIds))
                     Enable();
                 if (m_current == null)
-                    return;
+                    return false;
             }
 
             Debug.Assert((options & EventActivityOptions.Disable) == 0);
@@ -89,7 +89,7 @@ namespace System.Diagnostics.Tracing
                     relatedActivityId = Guid.Empty;
                     if (log.Debug)
                         log.DebugFacilityMessage("OnStartRET", "Fail");
-                    return;
+                    return false;
                 }
                 // Check for recursion, and force-stop any activities if the activity already started.
                 if ((options & EventActivityOptions.Recursive) == 0)
@@ -125,6 +125,8 @@ namespace System.Diagnostics.Tracing
                 log.DebugFacilityMessage("OnStartRetActivityState", ActivityInfo.LiveActivities(newActivity));
                 log.DebugFacilityMessage1("OnStartRet", activityId.ToString(), relatedActivityId.ToString());
             }
+
+            return true;
         }
 
         /// <summary>
@@ -133,10 +135,10 @@ namespace System.Diagnostics.Tracing
         ///
         /// If activity tracing is not on, then activityId and relatedActivityId are not set
         /// </summary>
-        public void OnStop(string providerName, string activityName, int task, ref Guid activityId)
+        public bool OnStop(string providerName, string activityName, int task, ref Guid activityId)
         {
             if (m_current == null)        // We are not enabled
-                return;
+                return false;
 
             string fullActivityName = NormalizeActivityName(providerName, activityName, task);
 
@@ -164,7 +166,7 @@ namespace System.Diagnostics.Tracing
                     // TODO add some logging about this. Basically could not find matching start.
                     if (log.Debug)
                         log.DebugFacilityMessage("OnStopRET", "Fail");
-                    return;
+                    return false;
                 }
 
                 activityId = activityToStop.ActivityId;
@@ -206,7 +208,7 @@ namespace System.Diagnostics.Tracing
                         log.DebugFacilityMessage("OnStopRetActivityState", ActivityInfo.LiveActivities(newCurrentActivity));
                         log.DebugFacilityMessage("OnStopRet", activityId.ToString());
                     }
-                    return;
+                    return true;
                 }
                 // We failed to stop it.  We must have hit a race to stop it.  Just start over and try again.
             }

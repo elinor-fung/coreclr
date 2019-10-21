@@ -39,6 +39,7 @@ namespace
 
         GUID activityId = GUID_NULL;
         GUID relatedActivityId = GUID_NULL;
+        bool started = false;
         {
             GCX_COOP();
             struct _gc {
@@ -66,13 +67,16 @@ namespace
                 PtrToArgSlot(&activityId),
                 PtrToArgSlot(&relatedActivityId),
             };
-            onStart.Call(args);
+            started = onStart.Call_RetBool(args);
 
             GCPROTECT_END();
         }
 
         s_RequestDepth++;
-        FireEtwAssemblyBindStart(GetClrInstanceId(), name, entryPointId, alc, &activityId, &relatedActivityId);
+        if (started)
+        {
+            FireEtwAssemblyBindStart(GetClrInstanceId(), name, entryPointId, alc, &activityId, &relatedActivityId);
+        }
 #endif // FEATURE_EVENT_TRACE
     }
 
@@ -111,6 +115,7 @@ namespace
             return;
 
         GUID activityId = GUID_NULL;
+        bool stopped = false;
         {
             GCX_COOP();
             struct _gc {
@@ -137,13 +142,17 @@ namespace
                 0,
                 PtrToArgSlot(&activityId),
             };
-            onStop.Call(args);
+            stopped = onStop.Call_RetBool(args);
 
             GCPROTECT_END();
         }
 
         s_RequestDepth--;
-        FireEtwAssemblyBindStop(GetClrInstanceId(), name, entryPointId, success, resultPath, &activityId);
+
+        if (stopped)
+        {
+            FireEtwAssemblyBindStop(GetClrInstanceId(), name, entryPointId, success, resultPath, &activityId);
+        }
 #endif // FEATURE_EVENT_TRACE
     }
 }
