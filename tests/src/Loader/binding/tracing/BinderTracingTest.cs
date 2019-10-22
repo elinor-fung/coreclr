@@ -12,6 +12,8 @@ namespace BinderTracingTests
 {
     class BinderTracingTest
     {
+        private const int EventWaitTimeoutInMilliseconds = 1000;
+
         public static int Main(string [] args)
         {
             using (var listener = new BinderEventListener())
@@ -19,7 +21,7 @@ namespace BinderTracingTests
                 string assemblyName = "System.Xml";
                 Assembly asm = Assembly.Load(assemblyName);
 
-                var events = listener.GetEventsBySimpleName(assemblyName);
+                var events = listener.WaitForEventsForAssembly(assemblyName, EventWaitTimeoutInMilliseconds);
                 Assert.True(events.Count() == 1, $"Bind event count for {assemblyName} - expected: 1, actual: {events.Count()}");
                 BindEvent bindEvent = events.First();
                 Assert.True(bindEvent.AssemblyLoadContext == "Default", $"ALC for {assemblyName} bind - expected: Default, actual {bindEvent.AssemblyLoadContext}");
@@ -37,7 +39,7 @@ namespace BinderTracingTests
                 }
                 catch { }
 
-                var events = listener.GetEventsBySimpleName(assemblyName);
+                var events = listener.WaitForEventsForAssembly(assemblyName, EventWaitTimeoutInMilliseconds);
                 Assert.True(events.Count() == 1, $"Expected one bind event for {assemblyName}");
                 BindEvent bindEvent = events.First();
                 Assert.True(bindEvent.AssemblyLoadContext.Contains(alcName) && bindEvent.AssemblyLoadContext.Contains("System.Runtime.Loader.AssemblyLoadContext"), $"Expected bind event for {assemblyName} to be in ALC {alcName}");
