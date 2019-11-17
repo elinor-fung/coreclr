@@ -11,4 +11,16 @@
   <ItemGroup>
     <ProjectReference Include="AssemblyToLoadDependency.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resource.resx" />
+  </ItemGroup>
+
+  <Target Name="_UpdateResourceCulture" AfterTargets="SplitResourcesByCulture" Condition="'$(ResourceCulture)'!=''">
+    <ItemGroup>
+      <EmbeddedResource Update="Resource.resx">
+        <Culture>$(ResourceCulture)</Culture>
+        <WithCulture>true</WithCulture>
+      </EmbeddedResource>
+    </ItemGroup>
+  </Target>
 </Project>

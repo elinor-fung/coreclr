@@ -36,12 +36,15 @@ namespace BinderTracingTests
         public List<HandlerInvocation> AppDomainAssemblyResolveHandlers { get; internal set; }
         public LoadFromHandlerInvocation AssemblyLoadFromHandler { get; internal set; }
 
+        public List<ProbedPath> ProbedPaths { get; internal set; }
+
         public List<BindOperation> NestedBinds { get; internal set; }
 
         public BindOperation()
         {
             AssemblyLoadContextResolvingHandlers = new List<HandlerInvocation>();
             AppDomainAssemblyResolveHandlers = new List<HandlerInvocation>();
+            ProbedPaths = new List<ProbedPath>();
             NestedBinds = new List<BindOperation>();
         }
 
@@ -83,6 +86,27 @@ namespace BinderTracingTests
         public bool IsTrackedLoad { get; internal set; }
         public string RequestingAssemblyPath { get; internal set; }
         public string ComputedRequestedAssemblyPath { get; internal set; }
+    }
+
+    internal class ProbedPath
+    {
+        public enum PathSource : ushort
+        {
+            TrustedPlatformAssemblies,
+            AppNativeImagePaths,
+            AppPaths,
+            PlatformResourceRoots,
+            SatelliteSubdirectory
+        }
+
+        public string FilePath { get; internal set; }
+        public PathSource Source { get; internal set; }
+        public int Result { get; internal set; }
+
+        public override string ToString()
+        {
+            return $"{FilePath} - Source={Source}, Result={Result}";
+        }
     }
 
     internal sealed class BinderEventListener : EventListener
@@ -207,7 +231,32 @@ namespace BinderTracingTests
                     }
                     break;
                 }
+                case "KnownPathProbed":
+                {
+                    ProbedPath probedPath = ParseKnownPathProbedEvent(GetData, GetDataString);
+                    lock (eventsLock)
+                    {
+                        Assert.IsTrue(bindOperations.ContainsKey(data.ActivityId), $"{data.EventName} should have a matching AssemblyBindStart");
+                        BindOperation bind = bindOperations[data.ActivityId];
+                        bind.ProbedPaths.Add(probedPath);
+                    }
+                    break;
+                }
             }
+
+            var sb = new System.Text.StringBuilder($"{data.EventName}");
+            sb.AppendLine();
+            sb.AppendLine("  Payload:");
+            for (int i = 0; i < data.Payload.Count; i++)
+            {
+                string payloadString = data.Payload[i] != null ? data.Payload[i].ToString() : string.Empty;
+                sb.AppendLine($"    {data.PayloadNames[i]} = {payloadString}");
+            }
+
+            sb.AppendLine($"  Activity: {data.ActivityId}");
+            sb.AppendLine($"  Related Activity: {data.RelatedActivityId}");
+
+            Console.WriteLine(sb.ToString());
         }
 
         private BindOperation ParseAssemblyLoadStartEvent(EventWrittenEventArgs data, Func<string, string> getDataString)
@@ -258,6 +307,17 @@ namespace BinderTracingTests
                 ComputedRequestedAssemblyPath = getDataString("ComputedRequestedAssemblyPath"),
             };
             return loadFrom;
+        }
+
+        private ProbedPath ParseKnownPathProbedEvent(Func<string, object> getData, Func<string, string> getDataString)
+        {
+            var probedPath = new ProbedPath()
+            {
+                FilePath = getDataString("FilePath"),
+                Source = (ProbedPath.PathSource)getData("Source"),
+                Result = (int)getData("Result"),
+            };
+            return probedPath;
         }
     }
 }

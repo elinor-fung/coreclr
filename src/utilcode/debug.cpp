@@ -710,7 +710,7 @@ VOID DbgAssertDialog(const char *szFile, int iLine, const char *szExpr)
             _DbgBreak();
         }
 
-        g_BufferLock = 0;
+       g_BufferLock = 0;
     }
 } // DbgAssertDialog
 
